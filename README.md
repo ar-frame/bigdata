@@ -71,7 +71,7 @@ sudo apt install mysql-server
 
 # 【2.配置】
 
-配置文件 src/conf/conf.ini
+复制src/conf/rename.conf.ini 重命名为配置文件 src/conf/conf.ini
 
 ```
 [set]
@@ -155,7 +155,7 @@ def getPoint(self, timeStart, timeEnd):
     return {"trade_opt": "buy|sell|no","trade_msg": "交易信息"}
 ```
 
-## ktrader 数字货币开源量化交易软件
+# ktrader 数字货币开源量化交易软件
 国内：https://gitee.com/ar-frame/ktrader
 
 国外：https://github.com/ar-frame/ktrader

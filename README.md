@@ -8,7 +8,7 @@
 
 ### 【windows】
 
-安装包下载地址： https://www.python.org/ftp/python/3.9.13/python-3.9.13-embed-amd64.zip
+安装包下载地址： https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
 
 
 ### 【Linux】
@@ -115,7 +115,7 @@ python  | 脚本    | 网格单元金额 | 品种    | 开始日期             
 进入 src 目录
 
 ## 启动数据源
-无论实盘，还是回测，首先需要运行数据源
+无论实盘，还是回测，首先需要运行数据源，初次运行，回测需要预加载数据8小时，实盘1小时。
 
 python | 脚本 | 品种
 

@@ -1076,6 +1076,9 @@ class Shipan:
 
         df = pd.DataFrame(result_orders)
 
+        if len(df) == 0:
+            return None
+
         showStr = ""
         dataListStr = ""
 
@@ -1168,7 +1171,8 @@ class Shipan:
 
     def dumpTrade(self, timedate, price):
         result_obj = self.getTradeResult(timedate, price)
-        print(result_obj.get("result_str"))
+        if result_obj is not None:
+            print(result_obj.get("result_str"))
 
     def pingc(self, timedate, price, forcepc = False):
         price = float(price)

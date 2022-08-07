@@ -1,10 +1,9 @@
 # 【Ktrader base核心交易程序使用】
-本程序bigdata是ktrader核心交易程序，项目全部为Python编写，数据库采用mongodb 
-无需客户端，web服务器等的安装，环境搭建容易，实盘支持linux及windows系统。
+本程序bigdata是ktrader核心交易程序，项目全部为Python编写，跨平台兼容各种操作系统，数据库采用mongodb ，无需客户端，web服务器等的安装，环境搭建容易，支持实盘，回测。
 
 # 【1.安装】
 ## python3安装
-推荐python3.9
+推荐python3.9，也可以根据[windows系统图文安装ktrader教程](https://zhuanlan.zhihu.com/p/550871253 "数字货币开源量化系统ktrader安装")安装本框架。
 
 ### 【windows】
 
@@ -155,7 +154,8 @@ def getPoint(self, timeStart, timeEnd):
     return {"trade_opt": "buy|sell|no","trade_msg": "交易信息"}
 ```
 
-# ktrader 数字货币开源量化交易软件
+# 全开源ktrader 数字货币开源量化交易软件（完整项目，含后台，客户端，运营）下载地址
+
 国内：https://gitee.com/ar-frame/ktrader
 
 国外：https://github.com/ar-frame/ktrader

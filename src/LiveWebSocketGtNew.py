@@ -111,8 +111,8 @@ def on_open(ws):
     logger.info('websocket connected')
     ws.subscribe("spot.trades", [cpair.upper()+"_USDT"], False)
 
-def on_close(ws):
-    print("### closed ###")
+def on_close(ws, msg, info):
+    print("### closed ###", msg, info)
 
 def on_error(ws, error):
     print("ws error %s" % error)
@@ -132,9 +132,9 @@ def connect():
     global ws
     try:
         if ws is None :
-            print('start connect...')
+            print('start connect data source...')
             logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.DEBUG)
-            websocket.setdefaulttimeout(3)
+            websocket.setdefaulttimeout(6)
             ws = GateWebSocketApp("wss://api.gateio.ws/ws/v4/",
                                    "YOUR_API_KEY",
                                    "YOUR_API_SECRET",

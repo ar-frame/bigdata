@@ -701,12 +701,13 @@ class Shipan:
     def updateNewData(self):
         tdata = self.cha.getLastTimeAreaData()
 
-        # print('last line cache data:')
-        # print(tdata)
+        if tdata is None:
+            print('restore tdata... ')
+            return
 
-        currentHouerData = self.getCurrentHouerData()
-        if len(currentHouerData) > 0:
-            df_hdata = pd.DataFrame(currentHouerData)
+        currentHourData = self.getCurrentHourData()
+        if len(currentHourData) > 0:
+            df_hdata = pd.DataFrame(currentHourData)
             new_df_hdata = df_hdata.loc[df_hdata.timedate.astype('int64') >= int(tdata['timedate'])]
 
             # print(new_df_hdata, )
@@ -786,8 +787,10 @@ class Shipan:
 
                 if pc is None:
                     print("point code none, last dump")
-
-                    self.dumpTrade(self.tick_data['timedate'], self.tick_data['price'])
+                    if 'timedate' not in self.tick_data:
+                        print("wait for connecting store data ...")
+                    else:
+                        self.dumpTrade(self.tick_data['timedate'], self.tick_data['price'])
 
                     # if self.lastPointCode is not None:
                     #     data_share_map['timedate'] = self.lastPointCode.get('timedate')
@@ -1046,9 +1049,9 @@ class Shipan:
 
         return float("%.2f" % levelPrice)
 
-    def getCurrentHouerData(self):
+    def getCurrentHourData(self):
         nowHour = datetime.datetime.now().strftime('%Y%m%d%H')
-        print('update data houer %s' % nowHour)
+        print('update data hour %s' % nowHour)
         mongo = cfg.getMongo(self.tradeVariety)
         db = MongoDB(mongo.get('DB'), 'gataio_eth_trades_h' + nowHour, mongo.get('DB_HOST'), mongo.get('DB_USER'), mongo.get('DB_PASS'))
         return list(db.query_all())
@@ -1134,31 +1137,34 @@ class Shipan:
             amount = Eamount
             open_price = 0
 
-            if Ebc - Esc > 0:
-                open_price = (Ebc - Esc) / Eamount
-                Eshow = "做多:数量{:.4f}，金额{:.2f}，成本价{:.2f}".format(Eamount, Ebc - Esc, open_price)
-                # pf = (price - (Ebc - Esc) / Eamount) * Eamount
-                opt = "buy"
-
-            elif Ebc - Esc < 0:
-                open_price = (Esc - Ebc) / Eamount
-                Eshow = "做空:数量{:.4f}，金额{:.2f}，成本价{:.2f}".format(Eamount, Esc - Ebc, open_price)
-                # pf = ((Esc - Ebc) / Eamount - price) * Eamount
-                opt = "sell"
-            else:
-                pass
+            amount = float("%.5f" % amount)
 
             c_profit = df['profit'].astype('float64').sum()
             profit = c_profit
 
+            if Ebc - Esc > 0:
+                open_price = (Ebc - Esc) / amount
+                Eshow = "做多:数量{:.5f}，金额{:.2f}，成本价{:.4f}".format(amount, Ebc - Esc, open_price)
+                opt = "buy"
+
+            elif Ebc - Esc < 0:
+                open_price = (Esc - Ebc) / amount
+                Eshow = "做空:数量{:.5f}，金额{:.2f}，成本价{:.4f}".format(amount, Esc - Ebc, open_price)
+                opt = "sell"
+            else:
+                pass
+
             r_transfer = c_profit / self.midcresult['mc']
 
-            showStr = showStr + ("最大占用 %.2f" % self.midcresult['mcMax']) + "\n"
+            # print('c_profit', c_profit)
+            # print('midcresult', self.midcresult['mc'])
+
+            showStr = showStr + ("最大占用 %.4f" % self.midcresult['mcMax']) + "\n"
             # showStr = showStr + ("最小占用 %.2f" % self.midcresult['mcMin']) + "\n"
 
-            showStr = showStr + ("转化率 %.2f" % (r_transfer * 100)) + "\n"
+            showStr = showStr + ("转化率 %.5f" % (r_transfer * 100)) + "\n"
 
-            showStr = showStr + ("总体盈利 %.2f" % c_profit) + "\n"
+            showStr = showStr + ("总体盈利 %.5f" % c_profit) + "\n"
             showStr = showStr + ("总单数 %d , 多单 %d, 空单 %d" % (len(df), len(df_buy), len(df_sell))) + "\n"
 
             showStr = showStr + ("当前价格 %.2f" % price) + "\n"
@@ -1167,7 +1173,7 @@ class Shipan:
         result_str = dataListStr + "\n" + showStr
 
         usdt_amount = "%.2f" % (amount * open_price)
-        return {"result_str": result_str, "opt": opt, "amount": "%.5f" % amount, "usdt_amount": usdt_amount, "open_price": "%.2f" % open_price, "profit": "%.2f" % profit, "open_date": open_date}
+        return {"result_str": result_str, "opt": opt, "amount": "%.5f" % amount, "usdt_amount": usdt_amount, "open_price": "%.2f" % open_price, "profit": "%.5f" % profit, "open_date": open_date}
 
     def dumpTrade(self, timedate, price):
         result_obj = self.getTradeResult(timedate, price)

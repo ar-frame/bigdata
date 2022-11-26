@@ -100,6 +100,12 @@ SHIPAN_CON_PROFIT_USDT = 0.5
 SHIPAN_CON_GRID_INC_LEVEL_POINT = 0.00618
 # 每次减仓价格波动率
 SHIPAN_CON_GRID_DEC_LEVEL_POINT = 0.00818
+
+# BUY 能级
+STG_NG_UP = 330000
+# SELL 能级
+STG_NG_DOWN = 290000
+
 ```
 
 # 【3.回测】
@@ -153,6 +159,27 @@ def getPoint(self, timeStart, timeEnd):
     #数据处理逻辑...
     return {"trade_opt": "buy|sell|no","trade_msg": "交易信息"}
 ```
+
+
+# 【更新日志】
+
+## 2022/11/26 增加能级配置参数
+[trade]
+```
+# 每次加仓价格波动率
+SHIPAN_CON_GRID_INC_LEVEL_POINT = 0.00618
+# 每次减仓价格波动率
+SHIPAN_CON_GRID_DEC_LEVEL_POINT = 0.00818
+
+# BUY 能级
+STG_NG_UP = 320000
+# SELL 能级
+STG_NG_DOWN = 280000
+
+```
+
+
+
 
 # 全开源ktrader 数字货币开源量化交易软件（完整项目，含后台，客户端，运营）下载地址
 

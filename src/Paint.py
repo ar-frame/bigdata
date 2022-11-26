@@ -41,6 +41,10 @@ class Paint:
 
     def __init__(self, tradeVariety):
         self.config = cfg.getCfg()
+
+        self.STG_NG_UP = float(self.config.get('trade', 'STG_NG_UP'))
+        self.STG_NG_DOWN = float(self.config.get('trade', 'STG_NG_DOWN'))
+
         self.startTime = time.time()
 
         nowHour = datetime.datetime.now().strftime('%Y%m%d%H')
@@ -958,21 +962,21 @@ class Paint:
         if mutiny == False:
 
             if absMax > absMin:
-                if code < 260000:
+                if code < self.STG_NG_DOWN:
                     trade_msg = "code %s sell, expect for buy" % code
                     print(trade_msg)
                     # print(nd_obj.get("nd_point_str"))
                     trade_opt = 'no'
-                elif code > 320000:
+                elif code > self.STG_NG_UP:
                     trade_opt = 'buy'
 
             elif absMax < absMin:
-                if code > 320000:
+                if code > self.STG_NG_UP:
                     trade_msg = "code %s buy, expect for sell" % code
                     print(trade_msg)
                     # print(nd_obj.get("nd_point_str"))
                     trade_opt = 'no'
-                elif code < 260000:
+                elif code < self.STG_NG_DOWN:
                     trade_opt = 'sell'
             else:
                 trade_opt = 'no'

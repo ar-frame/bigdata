@@ -26,6 +26,10 @@ class Characteristic:
 
     def getLastTimeAreaData(self):
         data = self.dbc['data']
+
+        if len(data) == 0:
+            print("cache data none")
+            return None
         return data.loc[data.index[-1]]
 
 

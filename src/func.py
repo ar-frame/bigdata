@@ -31,7 +31,10 @@ def transF1DateToTime(timedate):
     return tm_s
 
 def transTimedateToDate(timedate):
-    tm_s = transTimedateToTime(timedate) + 8 * 3600
+    if timedate is None:
+        tm_s = int(time.time()) + 8 * 3600
+    else:
+        tm_s = transTimedateToTime(timedate) + 8 * 3600
     return transTimeToTimedateF1(tm_s)
 
 def transF1ToTimedateF2(dateFormatF1):
@@ -56,22 +59,29 @@ def printDataFrame(df):
         joinConnector = " "
         columns = df.columns.insert(0, 'index')
         padLen = 8
+        padlongkeys = ['currency', 'price', 'ptimedate', 'timedate']
+        padLongLen = 20
         for index,row in df.iterrows():
             if index == 0:
                 header = []
                 for col in columns:
 
-                    if str(col) in ['ptimedate', 'timedate']:
-                        header.append(str(col).ljust(19))
+                    if str(col) in padlongkeys:
+                        header.append(str(col).ljust(padLongLen))
                     else:
                         header.append(str(col).ljust(padLen))
 
                     dumpstr = joinConnector . join(header)
 
             vals = [str(index).ljust(padLen)]
-            for item in dict(row).values():
 
-                vals.append(str(item).ljust(padLen))
+            for itemkey in dict(row).keys():
+                # print('row..', row)
+                if str(itemkey) in padlongkeys:
+                    vals.append(str(row[itemkey]).ljust(padLongLen))
+                else:
+                    vals.append(str(row[itemkey]).ljust(padLen))
+
             # dict(row).values()
             rowstr = joinConnector . join(vals)
             dumpstr = dumpstr + "\n" + rowstr
@@ -112,6 +122,10 @@ def getOrderFromStore(tradeVariety):
         mongo_store = cfg.getMongo('store')
         db_mongo_store = MongoDB(mongo_store.get('DB'), 'orders', mongo_store.get('DB_HOST'), mongo_store.get('DB_USER'), mongo_store.get('DB_PASS'))
         return list(db_mongo_store.query_all(con = {"complete": {"$eq": '0'}})) + list(db_mongo_store.query_all(con = {"complete": {"$eq": 0}}))
+
+def formatStoreName(name):
+    return str(name).replace('-', '').replace('_', '').lower()
+
 
 def getTradeObjByOrders(resdata, price, currency = 2):
     df = pd.DataFrame(list(resdata))

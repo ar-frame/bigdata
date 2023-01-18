@@ -2,9 +2,10 @@
 from pymongo import MongoClient
 import time
 
+
 class MongoDB:
     # 连接
-    def __init__(self, db_name, db_collection_name, dbHost = '127.0.0.1', dbUser = '', dbPass = '', dbPort = 27017):
+    def __init__(self, db_name, db_collection_name, dbHost='127.0.0.1', dbUser='', dbPass='', dbPort=27017):
         '''
         数据库连接
         '''
@@ -17,10 +18,10 @@ class MongoDB:
 
         self.connect(db_name, db_collection_name, dbHost, dbUser, dbPass, dbPort)
 
-    def connect(self, db_name, db_collection_name, dbHost = '127.0.0.1', dbUser = '',dbPass = '', dbPort = 27017):
-        client = MongoClient(dbHost, dbPort, serverSelectionTimeoutMS = 100, connectTimeoutMS = 20000)
+    def connect(self, db_name, db_collection_name, dbHost='127.0.0.1', dbUser='', dbPass='', dbPort=27017):
+        client = MongoClient(dbHost, dbPort, serverSelectionTimeoutMS=100, connectTimeoutMS=20000)
         try:
-            #client.admin.command('ismaster')
+            # client.admin.command('ismaster')
             info = client.server_info()
         except Exception as e:
             print('db not in service')
@@ -30,7 +31,7 @@ class MongoDB:
         if dbUser is not None:
             if (dbPass == "") == False:
                 client.admin.authenticate(dbUser, dbPass)
-        
+
         self.client = client
         db = client[db_name]
         db_connection = db[db_collection_name]
@@ -50,8 +51,8 @@ class MongoDB:
     def isAvailable(self):
         try:
             info = self.client.server_info()
-            #print(info)
-            #exit()
+            # print(info)
+            # exit()
             # self.client.admin.command('ismaster')
             return True
         except Exception as e:
@@ -64,7 +65,7 @@ class MongoDB:
             self.reConnectDb()
         self.db_connection = self.db[collection_name]
         return self
-    
+
     def get_all_collections(self):
         if self.isAvailable() == False:
             self.reConnectDb()
@@ -85,7 +86,7 @@ class MongoDB:
             return self.db_connection.insert_one(data)
         elif len(data) > 0:
             return self.db_connection.insert_many(data)
-        
+
     # 查找一行
     def query_row(self, con):
         if self.isAvailable() == False:
@@ -93,27 +94,27 @@ class MongoDB:
         return self.db_connection.find_one(con)
 
     # 查询所有
-    def query_all(self, con = {}):
+    def query_all(self, con={}):
         if self.isAvailable() == False:
             self.reConnectDb()
         return self.db_connection.find(con)
 
-    #修改记录
-    def update(self, con = {}, data = {}):
+    # 修改记录
+    def update(self, con={}, data={}):
         if self.isAvailable() == False:
             self.reConnectDb()
-        return self.db_connection.update_many(con, {"$set":data})
+        return self.db_connection.update_many(con, {"$set": data})
 
-    #修改记录无则插入
-    def update_insert(self, con = {}, data = {}):
+    # 修改记录无则插入
+    def update_insert(self, con={}, data={}):
         if self.isAvailable() == False:
             self.reConnectDb()
         if self.count(con) > 0:
-            return self.db_connection.update_many(con, {"$set":data})
+            return self.db_connection.update_many(con, {"$set": data})
         else:
             self.insert(data)
 
-    #删除一个collection中的所有数据
+    # 删除一个collection中的所有数据
     def remove(self):
         return self.clear_collections()
 

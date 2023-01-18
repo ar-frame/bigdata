@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 'trade moudule'
-__author__ = 'assnr'
+__author__ = 'dpbtrader'
 import pymysql
 import cfg
 import func

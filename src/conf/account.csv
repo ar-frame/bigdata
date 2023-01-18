@@ -1,0 +1,7 @@
+TZID,用户名,启用,虚拟下单,APPID,APIKEY,OPTK,策略,备注,状态
+1,dtest,1,1,aaaappid1ssss,apisskeyssss,gggggg_ggggggggggggggggggggssssssssssss,NJ,USD100,
+1,app5,1,1,aaa,bbb,ccc,NJ,USD2000,
+1,AA,1,1,FFFGGG,FA,SF,NJ,USD500,
+1,A,1,1,ggg,G,H1,NJ,,
+1,REALTEST,1,1,AA12,VV,CC1,NJ,,
+1,as,1,1,aasssss,gggga,ssggggg,RSI,实盘,

@@ -1,0 +1,5 @@
+2023-01-11 10:26:53,020 - DEBUG - [Errno 2] No such file or directory: 'C:\\Users\\doa\\Documents\\code\\python\\bigdata\\src\\conf/tz.csv'
+2023-01-11 10:26:53,068 - DEBUG - [Errno 2] No such file or directory: 'C:\\Users\\doa\\Documents\\code\\python\\bigdata\\src\\conf/tz.csv'
+2023-01-11 10:26:53,121 - DEBUG - [Errno 2] No such file or directory: 'C:\\Users\\doa\\Documents\\code\\python\\bigdata\\src\\conf/tz.csv'
+2023-01-11 10:46:52,386 - DEBUG - 0
+2023-01-11 18:07:25,201 - DEBUG - invalid literal for int() with base 10: '±Ò°²1'

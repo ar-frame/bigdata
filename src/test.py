@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 'test for dev moudule'
-__author__ = 'assnr'
-
+__author__ = 'dpbtrader'
+import pandas as pd
 import sys
+# import cfg
+
 
 def test():
     a = [1,2,3,4,5,6]

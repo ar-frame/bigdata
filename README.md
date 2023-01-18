@@ -2,13 +2,11 @@
 本程序bigdata是ktrader核心交易程序，项目全部为Python编写，跨平台兼容各种操作系统，数据库采用mongodb ，无需客户端，web服务器等的安装，环境搭建容易，支持实盘，回测。
 
 # 【1.安装】
-## python3安装
+## python3安装 (GUI一键运行，可以不安装python，仅安装Mongodb)
 推荐python3.9，也可以根据[windows系统图文安装ktrader教程](https://zhuanlan.zhihu.com/p/550871253 "数字货币开源量化系统ktrader安装")安装本框架。
 
 ### 【windows】
-
 安装包下载地址： https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
-
 
 ### 【Linux】
 推荐 debian11 系统，安装参考命令 `apt install python`
@@ -78,7 +76,7 @@ sudo apt install mysql-server
 SHIPAN_ENABLE = no
 
 ; 交易所 binance | okex | gateio
-TRADE_TYPE = binance
+TRADE_BROKER_TYPE = binance
 
 ; DB_TYPE mongodb | mysql
 SHIPAN_DB_TYPE = mongodb
@@ -126,19 +124,19 @@ python | 脚本 | 品种
 
 如监控BTC-USDT
 
-```python ./LiveWebSocketGtNew.py btc```
+```python src/DATA_BTC.py```
 
 ## 启动实盘
 python | 脚本 | 网格单元金额 | 品种
 
-`python ./Shipan.py 30 BTC-USDT`
+`python stgs/NJ/main.py`
 
 策略和回测的地方保持一致即可
 
 
-# 【5.内置策略说明】
-不建议直接使用，造成的盈亏自负。
-
+# 【5.策略开发说明】
+参照内置策略名：NJ, 不建议直接使用，造成的盈亏自负。
+注意：本文档的策略配置均以NJ策略作为说明。
 ## 交易策略
 KTrader 默认实现了一类似于RSI的能级因子code，code在 10W ~ 50W之间波动，当超买或者超卖code会有显著差异
 
@@ -149,8 +147,13 @@ KTrader 默认实现了一类似于RSI的能级因子code，code在 10W ~ 50W之
 
 
 ## 自定义策略
+### 目录
+src/stgs
 
-Paint.py关键函数：
+自定义策略在stgs目录，建议复制NJ为其他名称
+目录需要包含main.ini，main.py
+
+NJ 策略 Paint.py关键函数：
 ```
 def getPoint(self, timeStart, timeEnd):
 #核心只需要实现返回字典
@@ -160,8 +163,29 @@ def getPoint(self, timeStart, timeEnd):
     return {"trade_opt": "buy|sell|no","trade_msg": "交易信息"}
 ```
 
+# 【6.运行及调试】
+## 1.命令行模式：
+* 配置文件 stgs/[你的策略名字]/main.ini
+* 启动文件 python stgs/[你的策略名字]/main.py
+* 开发参照NJ
+
+## 2.GUI模式
+* 解压app.zip, 启动app.exe，配置参数，启动策略
+* 交易端app.zip压缩文件放在交流群里自由下载，如运行错误请安装vc64运行库
+* 系统截图
+![系统截图](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/app.jpg)
+
+## 错误及调试日志
+log/stg_error_log.log
+
+# gui package 
+pyinstaller .\app.spec
 
 # 【更新日志】
+## 2023/01/18 增加GUI交易端
+* 重构以支持GUI操作 (PyQT6) windows exe 一键启动
+* 封装NJ交易策略
+* 自定义装载策略
 
 ## 2022/11/26 增加能级配置参数
 [trade]
@@ -178,18 +202,14 @@ STG_NG_DOWN = 280000
 
 ```
 
-
-
-
 # 全开源ktrader 数字货币开源量化交易软件（完整项目，含后台，客户端，运营）下载地址
 
 国内：https://gitee.com/ar-frame/ktrader
-
 国外：https://github.com/ar-frame/ktrader
 
 ---
 【MIT】
-* Copyright © 2022 dpbtrader, v: kozdpb
+* Copyright © 2023 dpbtrader, v: kozdpb
 * ktrader学习交流q群: `259956472`
 
 

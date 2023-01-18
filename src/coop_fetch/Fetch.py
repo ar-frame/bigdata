@@ -22,6 +22,8 @@ class Fetch:
         try:
             response = requests.post(url, data = data)
         except Exception as e:
+            raise (ServerResponseException("err connection:" + str(e)))
+
             if str(e).find("Failed to establish a new connection") > 0:
                 print(e)
                 time.sleep(20)
@@ -64,7 +66,7 @@ class Fetch:
             apimap['param'] = "[\"\"]"
 
         apimap['authSign'] = authSign
-        apimap['CLIENT_SERVER'] = "GETCODER-PYTHON-SDK-20201104"
+        apimap['CLIENT_SERVER'] = "GETCODER-PYTHON-SDK-20221010"
 
         dataMap['data'] = apimap
 

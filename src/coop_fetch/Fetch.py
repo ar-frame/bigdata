@@ -61,7 +61,7 @@ class Fetch:
         apimap['method'] = workerName
 
         if params is not None and len(params) > 0:
-            apimap['param'] = json.dumps(params)
+            apimap['param'] = json.dumps(params, default=str)
         else:
             apimap['param'] = "[\"\"]"
 

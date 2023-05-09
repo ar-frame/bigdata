@@ -15,7 +15,16 @@ def updateAccountStatus():
         isonline = tools.checkAccountProcessIsRun(account_name)
         online_text = ''
         if isonline:
-            online_text = '运行中...'
+            online_text = '回测运行'
+
+        isonlineshipan = tools.checkAccountProcessIsRun(account_name, shipan=True)
+        if isonlineshipan:
+            shipaninfo = '实盘运行'
+            if len(online_text) > 0:
+                online_text = online_text + "，" + shipaninfo
+            else:
+                online_text = shipaninfo
+
         colindex = title.index('状态')
         df = cfg.getAccountConfig(DATAFRAME=True)
         df.iloc[i, colindex] = online_text
@@ -46,6 +55,4 @@ class WorkerTimerAccountProcessStatusThread(QThread):
                 print('update account status timer e:'. e)
 
             self.trigger.emit('update')
-            time.sleep(5)
-
-
+            time.sleep(3)

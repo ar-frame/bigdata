@@ -85,7 +85,6 @@ class AccountDialog(QDialog):
         hl_optk.addWidget(optk)
         hl_optk.addStretch()
 
-
         vl.addLayout(hl0)
         vl.addLayout(hl_stg)
         vl.addLayout(hl)

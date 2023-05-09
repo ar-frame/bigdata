@@ -3,6 +3,8 @@ import os
 import logging
 import datetime
 import json
+import shutil
+
 import pandas as pd
 from itertools import combinations, permutations
 
@@ -102,8 +104,9 @@ def getAccountStgInfo(account):
     account_config = getAccountCfg(account)
     stg_name = account_config.get('set', 'STG')
     curpath = os.path.dirname(os.path.realpath(__file__))
-    start_script = os.path.join(curpath, f"stgs/{stg_name}/main.py")
-    return {"start_script": start_script, "package": "stgs." + stg_name + ".main"}
+    start_script = os.path.join(curpath, f"stgs/{stg_name}/paint.py")
+    start_script_shipan = os.path.join(curpath, f"stgs/{stg_name}/main.py")
+    return {"start_script": start_script, "start_script_shipan": start_script_shipan, "package": "stgs." + stg_name + ".paint", "package_shipan": "stgs." + stg_name + ".main"}
 
 def getAccountStgInitCfg(account = None, raw=False, stg_name=None):
     if account is not None:
@@ -121,31 +124,26 @@ def getAccountStgInitCfg(account = None, raw=False, stg_name=None):
 
 def getMongo(tradeVariety = None):
     cfg = getCfg()
-    if tradeVariety is None:
-        mongo = cfg.get('set', 'mongo')
-    else:
-        if tradeVariety == 'ETH-USDT':
-            mongo = 'default'
-        elif tradeVariety == "EOS-USDT":
-            mongo = 'eos'
-        elif tradeVariety == "BTC-USDT":
-            mongo = 'btc'
-        else:
-            mongo = tradeVariety.lower()
+    mongo = 'store'
+    # if tradeVariety is None:
+    #     mongo = cfg.get('set', 'mongo')
+    # else:
+    #     if tradeVariety == 'ETH-USDT':
+    #         mongo = 'default'
+    #     elif tradeVariety == "EOS-USDT":
+    #         mongo = 'eos'
+    #     elif tradeVariety == "BTC-USDT":
+    #         mongo = 'btc'
+    #     else:
+    #         mongo = tradeVariety.lower()
 
     # cpair = tradeVariety[0:-5]
-
     DB = cfg.get('mongo_' + mongo, 'DB')
     DB_PASS = cfg.get('mongo_' + mongo, 'DB_PASS')
     DB_HOST = cfg.get('mongo_' + mongo, 'DB_HOST')
     DB_USER = cfg.get('mongo_' + mongo, 'DB_USER')
-
-    # DB = 'bigdata-' + cpair.lower()
-    # DB_PASS = ''
-    # DB_HOST = '127.0.0.1'
-    # DB_USER = ''
-
-    return {"DB": DB, "DB_PASS": DB_PASS, "DB_USER": DB_USER, "DB_HOST": DB_HOST}
+    DB_PORT = int(cfg.get('mongo_' + mongo, 'DB_PORT'))
+    return {"DB": DB, "DB_PASS": DB_PASS, "DB_USER": DB_USER, "DB_HOST": DB_HOST, "DB_PORT": DB_PORT}
 
 def getMysql():
     cfg = getCfg()
@@ -165,11 +163,16 @@ def error_log(msg):
     logging.basicConfig(filename=getGlobalErrorLogFile(), level=logging.DEBUG, format=LOG_FORMAT)
     return logging.debug(str(msg))
 
-def write_log(mark, content):
+def write_log(mark, content, isclear=False):
     if os.path.exists(LOG_PATH) == False:
         os.mkdir(LOG_PATH)
     filename = LOG_PATH + '/' + mark + '.log'
-    with open(filename, 'a') as f:
+    if isclear == True:
+        mode = 'w'
+    else:
+        mode = 'a'
+
+    with open(filename, mode, encoding='utf-8') as f:
         nowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         f.write("time:%s,msg:%s" % (nowTime, str(content)) + "\n")
 
@@ -302,14 +305,15 @@ def saveAccountsConfig(df):
     df.set_index('TZID', inplace=True)
     return df.to_csv(cfgpath, encoding='utf-8')
 
-
-
-
 def delAccount(rownumber):
+    user = getAccount(uid=rownumber)
+    account_name = user['用户名']
     ac = getAccountConfig(True)
     ac = ac.drop(index=rownumber)
     saveAccountsConfig(ac)
-
+    userdir = os.path.join(getBaseDir(), "trade_accounts/%s" % account_name)
+    if os.path.isdir(userdir):
+        shutil.rmtree(userdir)
 
 def genCookieFile(uid):
     accs = getAccountConfig(DATAFRAME=True)
@@ -466,7 +470,7 @@ def getAccountLatestOrders(account_name):
     mongo_store = getMongo('store')
     db_mongo_store = MongoDB(mongo_store.get('DB'), \
                                   'orders_' + func.formatStoreName(variety) + '_' + account_name,\
-                                  mongo_store.get('DB_HOST'), mongo_store.get('DB_USER'), mongo_store.get('DB_PASS'))
+                                  mongo_store.get('DB_HOST'), mongo_store.get('DB_USER'), mongo_store.get('DB_PASS'), mongo_store.get('DB_PORT'))
     orders = list(db_mongo_store.query_all(con={"complete": {"$eq": 0}}))
     return orders
 def getStgLists():
@@ -483,8 +487,8 @@ def getStgLists():
 if __name__ == "__main__":
     # mongo = getMongo()
     # print(mongo)
-    orders = getStgLists()
-    print(orders)
+
+    delAccount(7)
     pass
 
     # isrun = checkAccountProcessIsRun('REALTEST')

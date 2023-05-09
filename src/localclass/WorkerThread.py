@@ -1,18 +1,22 @@
 import time
 from PyQt6.QtCore import QThread, pyqtSignal
-
+import sys
+sys.path.append('../')
 from coop_fetch.Server import Server
 
 from multiprocessing import Process
 import tools
+import cfg
 
 def start_server(startmark = 'START' ):
     if startmark == 'START':
-
-        port = 5000
+        servercfg = cfg.getCfg().get('set', 'localserver')
+        host = servercfg.split(':')[0]
+        port = int(servercfg.split(':')[1])
         tools.kill_port_process(port)
 
-        a = Server(serverkey='aaabbbccccoopserverkey123in', host='localhost', port='5000')
+        serverkey = cfg.getCfg().get('set', 'localserverkey')
+        a = Server(serverkey=serverkey, host=host, port=port)
         a.add_endpoint(endpoint='/')
         a.run()
     else:
@@ -35,25 +39,8 @@ class WorkerThread(QThread):
             pass
 
     def run(self):
-        #重写线程执行的run函数
-        #触发自定义信号
-
-        # print('run ...')
-        # return
-
-        # a = Server(serverkey='aaabbbccccoopserverkey123in', host='localhost', port='5000')
-        # a.add_endpoint(endpoint='/')
-        # a.run()
-
         self.p = p = Process(target=start_server, args=('START', ))
         p.start()
 
-        # a = Server(serverkey='aaabbbccccoopserverkey123in', host='localhost', port='5000')
-        # a.add_endpoint(endpoint='/')
-        # a.run()
-
-        # for i in range(20):
-        #     time.sleep(1)
-        #     self.trigger.emit(str(i))
-
-
+if __name__ == "__main__":
+    start_server('START')

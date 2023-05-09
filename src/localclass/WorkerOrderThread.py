@@ -4,21 +4,25 @@ import time
 from PyQt6.QtCore import QThread, pyqtSignal
 
 import cfg
-
 from Trade import Trade
+import func
 
 fetch = cfg.getFetch()
 
-
 def updateJobData(mark):
+    jsonstr = {}
     try:
-        jsonstr = Trade(mark).getTradeResult()
+        tk = func.getAccountTickData(mark)
+        if 'infos' in tk:
+            infos = tk['infos']
+            recordstr = "持仓：\n"+str(infos['stockdetails']) + "\n平仓：\n" + str(infos['tradedetails'])
+        else:
+            recordstr = '记录为空'
     except Exception as e:
-        jsonstr = {}
-
-    if jsonstr is None:
-        jsonstr = {}
+        recordstr = '记 录 为 空'
     jsonstr['mark'] = mark
+    jsonstr['result_str'] = str(recordstr)
+
     jsonstr = json.dumps(jsonstr)
     fetch.getObject('server.Data', 'setDatakey', ['ORDER_LIST_STR', jsonstr])
 

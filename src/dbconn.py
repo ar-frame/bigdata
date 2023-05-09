@@ -2,7 +2,6 @@
 from pymongo import MongoClient
 import time
 
-
 class MongoDB:
     # 连接
     def __init__(self, db_name, db_collection_name, dbHost='127.0.0.1', dbUser='', dbPass='', dbPort=27017):
@@ -42,7 +41,7 @@ class MongoDB:
 
     def reConnectDb(self):
         print('start reconnect db...')
-        while self.connect(self.db_name, self.db_collection_name, self.dbHost, self.dbUser, self.dbPass) == False:
+        while self.connect(self.db_name, self.db_collection_name, self.dbHost, self.dbUser, self.dbPass, dbPort=self.dbPort) == False:
             time.sleep(2)
             self.reConnectDb()
 

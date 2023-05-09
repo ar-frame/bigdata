@@ -11,8 +11,7 @@ class TableWidget(QtWidgets.QTableWidget):
     cellLastCheckChanged = QtCore.pyqtSignal(str, int, int, str)
 
     def edit(self, index, trigger, event):
-        print('eeee', event, index.row(), index.column())
-
+        # print('eeee', event, index.row(), index.column())
         try:
             if self.last_item['col'] > -1:
                 row = self.last_item['row']

@@ -1,5 +1,4 @@
-binance-connector 
-matplotlib        
+matplotlib
 numpy             
 pandas             
 pymongo            
@@ -7,4 +6,9 @@ PyMySQL
 python-dateutil    
 requests           
 websocket         
-websocket-client   
+websocket-client
+PyQt6
+psutil
+pycryptodome
+flask_cors
+alive_progress

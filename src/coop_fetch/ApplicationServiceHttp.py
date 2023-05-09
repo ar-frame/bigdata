@@ -1,9 +1,12 @@
+import traceback
+
 from .Cipher import Cipher
 from .Service import Service
 import json
 import importlib
 import sys
 import os
+import urllib.parse
 
 class ApplicationServiceHttp:
     def __init__(self, serverkey):
@@ -15,13 +18,14 @@ class ApplicationServiceHttp:
             basedir = os.path.dirname(os.path.dirname(__file__))
             sys.path.append(basedir)
             data = self.parseHttpServiceHanlder(self.ws)
-
+            # print('data..', data)
             if data['authSign']['AUTH_SERVER_OPKEY'] != self.serverkey:
                 raise(Exception('serverkey error'))
 
             md = importlib.import_module(data['class'])
             server_class_name = data['class'].split('.')[-1]
             param = json.loads(data['param'])
+            # print('orgin data:', data['param'], param)
             class_of_module_obj = getattr(md, server_class_name)
             instance_of_cmo = class_of_module_obj()
             # instance_of_cmo.__init__()
@@ -29,11 +33,16 @@ class ApplicationServiceHttp:
             ret = method_of_cmo(*param)
             return ret
         except Exception as e:
+            traceback.print_exc()
             msg = {"SYSTEM_ERROR": 1, 'errMsg': str(e)}
             return Service().response(msg)
 
     def parseHttpServiceHanlder(self, ws):
+        # print('ws', ws)
         datastr = self.decrypt(ws)
+        # print('datastr', datastr)
+        datastr = urllib.parse.unquote(datastr)
+        # print('datastr2', datastr)
         dataobj = json.loads(datastr)
 
         if 'data' not in dataobj:

@@ -1,21 +1,118 @@
-# 【Ktrader base核心交易程序使用】
-本程序bigdata是ktrader核心交易程序，项目全部为Python编写，跨平台兼容各种操作系统，数据库采用mongodb ，无需客户端，web服务器等的安装，环境搭建容易，支持实盘，回测。
+# 【KT交易端】
+本程序bigdata（KT交易端）是ktrader核心交易程序，使用PyQT开发，理论上跨平台兼容各种操作系统。
+
+GUI配置，多进程+线程运行，支持实盘，回测，支持多品种同时交易。
+
+* 系统主界面
+![系统截图](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/app_2.1.2.png)
 
 # 【1.安装】
-## python3安装 (GUI一键运行，可以不安装python，仅安装Mongodb)
-推荐python3.9，也可以根据[windows系统图文安装ktrader教程](https://zhuanlan.zhihu.com/p/550871253 "数字货币开源量化系统ktrader安装")安装本框架。
 
-### 【windows】
-安装包下载地址： https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
+## Mongodb安装
+KT交易端运行需要mongodb数据库的支持，windows双击安装即可。
+mongodb下载地址https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-4.4.15-signed.msi
+安装好后，参考'配置'的mongodb
 
-### 【Linux】
-推荐 debian11 系统，安装参考命令 `apt install python`
+## 交易端下载
+KT交易端是基于PyQt6的开发，打包windows exe运行程序在开发群文件共享里下载
 
-## python支持库安装
-扩展需要
+### 启动
+* 解压app.zip, 启动app.exe，配置参数，启动策略
+* 交易端app.zip压缩文件放在交流群里自由下载，如运行错误请安装vc64运行库
+* 系统推荐WIN10 64位 8G以上内存
 
-binance-connector 
-matplotlib        
+# 【2.配置】
+复制src/conf/rename.conf.ini 重命名为配置文件 src/conf/conf.ini
+
+## 【2.1全局配置】
+主要配置网络，数据库，密钥等，如无特殊说明保持默认即可。
+httpproxies 网络代理
+mongo_store 配置mongo存储
+```
+[set]
+shipan_enable = yes
+trade_broker_type = binance
+print_runtime_trace = no
+push_to_shipan_record = yes
+shipan_db_type = mongodb
+mongo = store
+localserver = localhost:5000
+localserverkey = aaabbbccccoopserverkey123in
+localwebserver = localhost:8000
+httpproxies = 192.168.101.169:10810
+
+[mongo_store]
+db_host = 192.168.101.169
+db = store
+db_pass = 
+db_user = 
+db_port = 27017
+```
+
+## 【2.2账户添加】
+KT的每个账户（非交易所账户）独立存在，建议每个交易对配置一个账户。
+不同策略参数配置不同账户，名称不同即可。
+![账户添加](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/add_account.png)
+
+# 【3.回测】
+实盘之前，需要检测策略的逻辑正确性，可行性，回测即是最好的方案
+
+## 配置参数
+![策略编辑](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/edit_stg.png)
+
+## 启动回测
+![启动回测](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/start_paint.png)
+
+## 启动数据源
+回测前，需要添加DATA账户，启动一段时间（根据策略的需要来定）
+数据是1s Kline data, 回测的时间最好不要超过24h
+![启动DATA](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/start_data.png)
+
+
+# 【4.实盘】
+* 设置策略参数 参考回测，建议先回测检验策略的有效性
+* 启动实盘
+![启动回测](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/start_shipan.png)
+
+* 历史数据
+![历史数据](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/show_his.png)
+
+
+# 【5.策略开发】
+
+## 自定义策略
+### 目录
+src/stgs
+参照内置策略名：`RSI`, 
+开发复制整个`RSI`目录，更改为其他名字，建议不要使用中文。
+
+目录需要包含
+* main.ini 策略配置
+* main.py 实盘引导文件
+* paint.py 回测引导文件
+* stg.py 策略逻辑文件
+
+策略是主要修改stg.py的策略内容
+
+目前策略内置 DATA，RSI两个策略：
+DATA，数据存储，回测前必启动
+RSI，参考策略模板
+* 更多策略请+交流群
+
+# 【二开】
+## 使用的技术和框架
+coop_fetch
+coop_server
+python3
+mongodb
+websocket
+pyqt
+nodejs
+react
+tradingview lightweight-charts
+
+## 依赖库参考
+matplotlib
 numpy             
 pandas             
 pymongo            
@@ -23,165 +120,32 @@ PyMySQL
 python-dateutil    
 requests           
 websocket         
-websocket-client   
+websocket-client
+PyQt6
+psutil
+pycryptodome
+flask_cors
+alive_progress
             
 ### 参考一键安装命令
 `python -m pip install -r requirements.txt`
 
 ## 数据库
-
 ### mongodb (必须)
-
-#### windows
-安装包下载地址https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-4.4.15-signed.msi
-
-#### linux
-
-##### 1.官方安装文档
-https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-debian/
-
-##### 2.ktrader docker debian镜像包 (推荐)
-里面有全部的运行环境
-ktrader2.1.tar.gz 下载地址
-链接：https://pan.baidu.com/s/1mxQ_seHE5caIk_1DgxLbmQ?pwd=3x2r 
-
-导入命令
-`gunzip -c ktrader2.1.tar.gz | docker import - ktrader2.1_debian_img`
-
-
-### mysql （可选）
-#### windows 不建议
-使用mongodb即可
-
-#### linux
-
-##### 1.命令安装
-```
-wget https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb
-sudo apt install ./mysql-apt-config_0.8.22-1_all.deb
-sudo apt update
-sudo apt install mysql-server
-```
-##### 2.使用docker镜像包
-参考上面mongodb
-
-
-# 【2.配置】
-
-复制src/conf/rename.conf.ini 重命名为配置文件 src/conf/conf.ini
-
-```
-[set]
-; 开启实盘 no | yes
-SHIPAN_ENABLE = no
-
-; 交易所 binance | okex | gateio
-TRADE_BROKER_TYPE = binance
-
-; DB_TYPE mongodb | mysql
-SHIPAN_DB_TYPE = mongodb
-
-mongo = default
-
-[trade]
-# 反向减仓unit倍数
-SHIPAN_FXJC_INDEX = 2
-# 最大交易unit倍数
-SHIPAN_TRADE_MAX_UNIT_INDEX = 3
-# 触发正向盈利平仓仓位
-SHIPAN_PC_ZX_USDTAMOUNT_LINE = 30
-# 触发反向盈利平仓仓位
-SHIPAN_PC_FX_USDTAMOUNT_LINE = 200
-# & 触发平仓盈利条件
-SHIPAN_CON_PROFIT_USDT = 0.5
-# 每次加仓价格波动率
-SHIPAN_CON_GRID_INC_LEVEL_POINT = 0.00618
-# 每次减仓价格波动率
-SHIPAN_CON_GRID_DEC_LEVEL_POINT = 0.00818
-
-# BUY 能级
-STG_NG_UP = 330000
-# SELL 能级
-STG_NG_DOWN = 290000
-
-```
-
-# 【3.回测】
-
-## 启动回测
-python  | 脚本    | 网格单元金额 | 品种    | 开始日期             | now > 当前时间  | 10表示步进 为10分钟
-
-` python  ./Paint.py 100           BTC-USDT '2022-06-16 21:00:00'  now               5   `
-
-
-# 【4.实盘】
-进入 src 目录
-
-## 启动数据源
-无论实盘，还是回测，首先需要运行数据源，初次运行，回测需要预加载数据8小时，实盘1小时。
-
-python | 脚本 | 品种
-
-如监控BTC-USDT
-
-```python src/DATA_BTC.py```
-
-## 启动实盘
-python | 脚本 | 网格单元金额 | 品种
-
-`python stgs/NJ/main.py`
-
-策略和回测的地方保持一致即可
-
-
-# 【5.策略开发说明】
-参照内置策略名：NJ, 不建议直接使用，造成的盈亏自负。
-注意：本文档的策略配置均以NJ策略作为说明。
-## 交易策略
-KTrader 默认实现了一类似于RSI的能级因子code，code在 10W ~ 50W之间波动，当超买或者超卖code会有显著差异
-
-## 下单策略
-核心是马丁，网格金额随着振幅加大逐渐增大，模拟盘网格信号级别最大为8，实盘最大加仓为 3倍单元金额
-## 平仓策略
-模拟盘无，实盘反向做单为2倍 单元金额，当盈利并且持仓超过指定金额，在下次减仓交易信号出现时平仓，记录交易日志
-
-
-## 自定义策略
-### 目录
-src/stgs
-
-自定义策略在stgs目录，建议复制NJ为其他名称
-目录需要包含main.ini，main.py
-
-NJ 策略 Paint.py关键函数：
-```
-def getPoint(self, timeStart, timeEnd):
-#核心只需要实现返回字典
-# timeStart 步进开始时间
-# timeEnd   步进结束时间
-    #数据处理逻辑...
-    return {"trade_opt": "buy|sell|no","trade_msg": "交易信息"}
-```
-
-# 【6.运行及调试】
-## 1.命令行模式：
-* 配置文件 stgs/[你的策略名字]/main.ini
-* 启动文件 python stgs/[你的策略名字]/main.py
-* 开发参照NJ
-
-## 2.GUI模式
-* 解压app.zip, 启动app.exe，配置参数，启动策略
-* 交易端app.zip压缩文件放在交流群里自由下载，如运行错误请安装vc64运行库
-* 系统截图
-![系统截图](https://gitee.com/ar-frame/bigdata/raw/master/docs/img/app.jpg)
 
 ## 错误及调试日志
 log/stg_error_log.log
 
-# gui package 
+## gui package 
 pyinstaller .\app.spec
 
 # 【更新日志】
+
+## 2023/05/09 功能增加
+* 增加实盘，回测 K线
+* 多窗口监控
+* 优化交易
+
 ## 2023/01/18 增加GUI交易端
 * 重构以支持GUI操作 (PyQT6) windows exe 一键启动
 * 封装NJ交易策略
@@ -201,13 +165,6 @@ STG_NG_UP = 320000
 STG_NG_DOWN = 280000
 
 ```
-
-# 全开源ktrader 数字货币开源量化交易软件（完整项目，含后台，客户端，运营）下载地址
-
-国内：https://gitee.com/ar-frame/ktrader
-国外：https://github.com/ar-frame/ktrader
-
----
 【MIT】
 * Copyright © 2023 dpbtrader, v: kozdpb
 * ktrader学习交流q群: `259956472`

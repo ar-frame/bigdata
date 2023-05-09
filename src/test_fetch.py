@@ -4,15 +4,12 @@ from coop_fetch.Fetch import Fetch
 from coop_fetch.Cipher import Cipher
 
 
-config = Config("http://192.168.101.177:19008", "AABBCCKTRADER2022")
+config = Config("http://localhost:5000", "aaabbbccccoopserverkey123in")
 fetch = Fetch(config)
 
 try:
-    tr = fetch.getString('service.ctl.bestplan.data', 'testClientRecv', ['inini..'])
+    tr = fetch.getArray('server.Data', 'getKlineHisData', ['BTCUSDT', '2023-04-06 18:51:00', '2023-04-06 21:39:00'])
     print(type(tr), tr)
-
-    pushobj = fetch.getObject('service.ctl.bestplan.data', 'pushPaintRecord', ['btc-usdt', '2022061120220612', "python3 paint.py start test", 'test ok11111111111111111111114412415aa'])
-    print(type(pushobj), pushobj)
 
 except Exception as e:
     print(e)

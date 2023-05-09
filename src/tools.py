@@ -238,20 +238,24 @@ def checkMainProcessStatusAndExit():
     except Exception as e:
         print('checkMainProcessStatusAndExit e:', e)
 
-def setAccountProcess(account_name, pid):
+def setAccountProcess(account_name, pid, shipan=False):
     setkey = 'process_' + account_name
+    if shipan:
+        setkey = setkey + '_shipan'
     pushobj = fetch.getObject('server.Data', 'setDatakey', [setkey, pid])
 
-def getAccountProcessId(account_name):
+def getAccountProcessId(account_name, shipan=False):
     setkey = 'process_' + account_name
+    if shipan:
+        setkey = setkey + '_shipan'
     try:
         pid = fetch.getInt('server.Data', 'getDataByKey', [setkey])
         return pid
     except Exception as e:
         return None
 
-def checkAccountProcessIsRun(account_name):
-    pid = getAccountProcessId(account_name)
+def checkAccountProcessIsRun(account_name, shipan=False):
+    pid = getAccountProcessId(account_name, shipan)
     if pid is not None:
         return check_pid(pid)
     else:

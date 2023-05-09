@@ -1,13 +1,18 @@
 import json
 import os
 import sys
+import traceback
 from multiprocessing import freeze_support
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QPushButton, QLabel, QVBoxLayout, \
     QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QMessageBox, \
     QDialogButtonBox, QTabWidget, QScrollArea, QPlainTextEdit
 
+from localclass.WorkerTimerTzStatusThread import WorkerTimerTzStatusThread
+from localclass.WorkerWebServerThread import WorkerWebServerThread
+from stgs.RSI.paint import Paint
 import cfg
+import func
 
 import tools
 from Trade import Trade
@@ -20,17 +25,16 @@ from localclass.WorkerTimerAccountProcessStatusThread import WorkerTimerAccountP
 from localclass.AccountDialog import AccountDialog
 from localclass.CheckBox import CheckBox
 from localclass.CustomDialog import CustomDialog
-from localclass.SpinBox import SpinBox
-from localclass.DoubleSpinBox import DoubleSpinBox
-
-from localclass.main import CheckableComboBox
 from localclass.TableWidget import TableWidget
+
+from localclass.BroswerWindow import BroswerWindow
 
 import pandas as pd
 
 from localclass.WorkerThread import WorkerThread
 from localclass.WorkerDataListenThread import WorkerDataListenThread
 from localclass.WorkerStgThread import WorkerStgThread
+from localclass.WorkerStgShipanThread import WorkerStgShipanThread
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -46,6 +50,10 @@ class MainWindow(QMainWindow):
         self.work.trigger.connect(self.job_done)
         self.work.finished.connect(self.job_finished)
 
+        self.work_webserver = WorkerWebServerThread()
+
+        self.windowhandles = []
+
         self.workdatalisten = WorkerDataListenThread()
         if int(self.config.get('app', 'stop_listen')) == 0:
             try:
@@ -56,6 +64,9 @@ class MainWindow(QMainWindow):
 
         self.workstg = WorkerStgThread()
         self.workstg.finished.connect(self.onCloseWorkerStg)
+
+        self.workstg_shipan = WorkerStgShipanThread()
+        self.workstg_shipan.finished.connect(self.onCloseWorkerStg)
 
         self.setWindowTitle(self.config.get('app', 'title'))
         # As well as .setFixedSize() you can also call .setMinimumSize() and .setMaximumSize() to set the minimum and maximum sizes respectively. Experiment with this yourself!
@@ -80,9 +91,9 @@ class MainWindow(QMainWindow):
 
         self.layout_accounts = layout_accounts = QVBoxLayout()
         layout_1account = QHBoxLayout()
-        layout_1account.addWidget(QLabel('平台'))
+        layout_1account.addWidget(QLabel('账号'))
         layout_1account.addWidget(QLabel('余额'))
-        # layout_1account.addWidget(QLabel('状态'))
+        layout_1account.addWidget(QLabel('状态'))
         layout_accounts.addLayout(layout_1account)
 
         df_accounts = cfg.getAccountConfig(DATAFRAME=True)
@@ -93,12 +104,16 @@ class MainWindow(QMainWindow):
             print(row['用户名'])
 
             layout_1account = QHBoxLayout()
-            qltz = Label(row['用户名'],row['用户名'])
+            qltz = Label(row['用户名'], row['用户名'])
             qltz.clicked.connect(self.labelclicked)
             qltz.setStyleSheet('color:#666;cursor:pointer;')
             layout_1account.addWidget(qltz)
-
             layout_1account.addWidget(QLabel('-'))
+
+            qlonlinestatus = QLabel('离线')
+            qlonlinestatus.setStyleSheet('color:red;')
+            layout_1account.addWidget(qlonlinestatus)
+
             layout_accounts.addLayout(layout_1account)
 
         layout_accounts.addStretch()
@@ -114,6 +129,11 @@ class MainWindow(QMainWindow):
         # timer thread
         self.worktimer = WorkerTimerAccountProcessStatusThread()
         self.worktimer.trigger.connect(self.updateAccountProcessStatus)
+
+        # real shipan account status
+        self.worktimer_shipan = WorkerTimerTzStatusThread()
+        self.worktimer_shipan.trigger.connect(self.updateShipanStatus)
+
         layout_his.addWidget(self.getHisOrderLayout())
 
         boxhis = QWidget()
@@ -130,12 +150,55 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout_main)
         self.setCentralWidget(widget)
 
+    def updateShipanStatus(self, notifystr):
+        # print('up status:', notifystr)
+        datalist = json.loads(notifystr)
+        count = self.layout_accounts.count()
+        # print('lc:', count)
+        for i in range(count):
+            item = self.layout_accounts.itemAt(i)
+            if type(item) is QHBoxLayout:
+                if i == 0:
+                    continue
+                # print('item found...', i)
+                obj = item.itemAt(0)
+                widget = obj.widget()
+                if type(widget) is Label:
+                    # print('widget', widget.text(), widget.mark)
+                    # widget.setText('aabbcc')
+                    try:
+                        objbalance = item.itemAt(1)
+                        widgetbalance = objbalance.widget()
+                        crow = datalist[i - 1]
+                        if crow['account_name'] == widget.mark:
+                            widgetbalance.setText(str(crow['balance']))
+                            objinfo = item.itemAt(2)
+                            widgetinfo = objinfo.widget()
+                            if crow['online'] == True:
+                                widgetinfo.setText('在线')
+                                widgetinfo.setStyleSheet('color:green;')
+                            else:
+                                widgetinfo.setText('离线')
+                                widgetinfo.setStyleSheet('color:red;')
+                    except Exception as e:
+                        print('updateShipanStatus', e)
+                        traceback.print_exc()
     def onCloseWorkerStg(self):
         print('worker stg close')
+
+    def clearHiddenWindow(self):
+        lenh = len(self.windowhandles)
+        # print('clear window:', lenh)
+        for i in range(lenh):
+            wk = lenh - 1 - i
+            w = self.windowhandles[wk]
+            if w.isHidden():
+                del(self.windowhandles[wk])
 
     def updateAccountProcessStatus(self, notifystr):
         print('up status:', notifystr)
         self.initAccountTable()
+        self.clearHiddenWindow()
 
     def labelclicked(self, mark):
         if self.WORKER_START:
@@ -146,14 +209,15 @@ class MainWindow(QMainWindow):
             self.showAlertStartService()
 
     def tabchange(self, p_int):
-        print('tab change...', p_int)
+        # print('tab change...', p_int)
         if p_int == 1:
-            print('workorder: re get order info')
+            pass
+            # print('workorder: re get order info')
             # self.workorder.start()
 
     def updateOrderData(self, data):
         # self.updateNewOrderComeRefresh()
-        print("update orders...", data)
+        # print("update orders...", data)
 
         try:
             jsonobj = json.loads(data)
@@ -164,6 +228,7 @@ class MainWindow(QMainWindow):
             self.order_editarea.setPlainText('记录为空')
 
         # self.layout_done_orders.addWidget(QLabel('加载完毕。。'))
+
     def stopOrderData(self):
         print('order end...')
 
@@ -200,6 +265,7 @@ class MainWindow(QMainWindow):
     def job_finished(self):
         print('job finished')
         # self.btn_start.setText('开始')
+
     def job_start(self):
         print('job start..')
         # return 'start...'
@@ -207,27 +273,29 @@ class MainWindow(QMainWindow):
             self.btn_start.setText('停止')
             self.WORKER_START = True
             self.work.start()
+            self.work_webserver.start()
 
             if self.WORKER_INIT == False:
                 print('first start worktimer')
                 self.worktimer.start()
-                # self.worktzpb.start()
-                # self.worktzim.start()
-                # self.worktzlh.start()
+                self.worktimer_shipan.start()
 
                 self.WORKER_INIT = True
         else:
             print('worker listen...')
             print('stoped ...')
             self.btn_start.setText('开始')
-
             self.work.stop_server()
             self.work.terminate()
             self.WORKER_START = False
 
-
     def job_done(self, bakstr):
         print('job done succ..' + bakstr)
+
+    def job_clear(self):
+        print('job clear...')
+        func.clearData()
+        self.showAlertStartService('清理完成')
 
     def getHeader(self):
         # header
@@ -235,43 +303,80 @@ class MainWindow(QMainWindow):
         self.btn_start = btn_start = QPushButton('开始')
         btn_start.clicked.connect(self.job_start)
 
+        self.btn_clear = btn_clear = QPushButton('清理')
+        btn_clear.clicked.connect(self.job_clear)
+
         header.addWidget(btn_start, 0)
+        header.addWidget(btn_clear)
 
-        qc_stop_listen = CheckBox('app.stop_listen', 0, 0)
-        qc_stop_listen.setText('暂停监控')
-        if int(self.config.get('app', 'stop_listen')) == 1:
-            qc_stop_listen.setChecked(True)
-        else:
-            pass
+        # qc_stop_listen = CheckBox('app.stop_listen', 0, 0)
+        # qc_stop_listen.setText('暂停监控')
+        # if int(self.config.get('app', 'stop_listen')) == 1:
+        #     qc_stop_listen.setChecked(True)
+        # else:
+        #     pass
+        # qc_stop_listen.checkIndexChange.connect(self.check_change)
+        # qc_stop_xiazhu = CheckBox('app.stop_xiazhu', 0, 0)
+        # qc_stop_xiazhu.setText('暂停下单')
+        #
+        # if int(self.config.get('app', 'stop_xiazhu')) == 1:
+        #     qc_stop_xiazhu.setChecked(True)
+        #
+        # qc_stop_xiazhu.checkIndexChange.connect(self.check_change)
 
-
-        qc_stop_listen.checkIndexChange.connect(self.check_change)
-
-        qc_stop_xiazhu = CheckBox('app.stop_xiazhu', 0, 0)
-        qc_stop_xiazhu.setText('暂停下单')
-
-        if int(self.config.get('app', 'stop_xiazhu')) == 1:
-            qc_stop_xiazhu.setChecked(True)
-
-        qc_stop_xiazhu.checkIndexChange.connect(self.check_change)
-
-        header.addWidget(qc_stop_listen)
-        header.addWidget(qc_stop_xiazhu)
+        # header.addWidget(qc_stop_listen)
+        # header.addWidget(qc_stop_xiazhu)
 
         header.addStretch()
-        btn_start_stg = QPushButton('启动策略')
+        btn_start_stg = QPushButton('启动回测')
         btn_start_stg.clicked.connect(self.start_stg)
 
-        btn_stop_stg = QPushButton('停止策略')
+        btn_stop_stg = QPushButton('停止回测')
         btn_stop_stg.clicked.connect(self.stop_stg)
+
+        btn_start_stg_shipan = QPushButton('启动实盘')
+        btn_start_stg_shipan.clicked.connect(self.start_stg_shipan)
+
+        btn_stop_stg_shipan = QPushButton('停止实盘')
+        btn_stop_stg_shipan.clicked.connect(self.stop_stg_shipan)
 
         header.addWidget(btn_start_stg)
         header.addWidget(btn_stop_stg)
+
+        header.addWidget(btn_start_stg_shipan)
+        header.addWidget(btn_stop_stg_shipan)
+
         return header
 
     def start_stg(self):
+        try:
+            if self.WORKER_START:
+                print('start stg')
+                selectRows = self.tw_account_list.selectionModel().selectedRows()
+                loginuid = 0
+                if selectRows:
+                    if len(selectRows) == 1:
+                        currentRows = selectRows[0]
+                        accs = cfg.getAccountConfig(DATAFRAME=True)
+                        selacc = accs.iloc[currentRows.row()]
+                        loginuid = currentRows.row()
+
+                        account_name = selacc['用户名']
+                        print('acc:', account_name)
+                        w = BroswerWindow(account_name + '回测', account_name, path='paint')
+                        func.setAccountKlineData(account_name, Paint.RUN_TYPE_STATIC, {})
+                        self.windowhandles.append(w)
+                        w.show()
+                        self.workstg.set_login_uid(loginuid)
+                        self.workstg.start()
+            else:
+                self.showAlertStartService()
+        except Exception as e:
+            print('e start stg err:', e)
+
+    def start_stg_shipan(self):
         if self.WORKER_START:
-            print('start stg')
+            print('start shipan stg')
             selectRows = self.tw_account_list.selectionModel().selectedRows()
             loginuid = 0
             if selectRows:
@@ -280,12 +385,21 @@ class MainWindow(QMainWindow):
                     accs = cfg.getAccountConfig(DATAFRAME=True)
                     selacc = accs.iloc[currentRows.row()]
                     loginuid = currentRows.row()
-            self.workstg.set_login_uid(loginuid)
-            self.workstg.start()
+
+                    account_name = selacc['用户名']
+                    w = BroswerWindow(account_name + '实盘', account_name, path='shipan')
+
+                    self.windowhandles.append(w)
+                    w.show()
+                    print('is hidden:', w.isHidden())
+
+
+                    self.workstg_shipan.set_login_uid(loginuid)
+                    self.workstg_shipan.start()
         else:
             self.showAlertStartService()
 
-    def showAlertStartService(self, msg = None):
+    def showAlertStartService(self, msg=None):
         if msg is None:
             msg = "请先开始服务"
         dlg = QMessageBox(self)
@@ -307,13 +421,46 @@ class MainWindow(QMainWindow):
                     selacc = accs.iloc[currentRows.row()]
                     # print()
                     account_name = selacc['用户名']
-
                     try:
                         pid = tools.getAccountProcessId(account_name)
                         if pid is not None:
                             tools.kill_pid(pid)
+                        self.showAlertStartService('操作成功')
                     except Exception as e:
                         print(e)
+                else:
+                    self.showAlertStartService('请选择回测账号')
+            else:
+                self.showAlertStartService('请选择账号')
+        else:
+            self.showAlertStartService()
+
+    def stop_stg_shipan(self):
+        if self.WORKER_START:
+            print('stop stg shipan')
+            selectRows = self.tw_account_list.selectionModel().selectedRows()
+            loginuid = 0
+            if selectRows:
+                if len(selectRows) == 1:
+                    currentRows = selectRows[0]
+                    accs = cfg.getAccountConfig(DATAFRAME=True)
+                    selacc = accs.iloc[currentRows.row()]
+                    # print()
+                    account_name = selacc['用户名']
+                    try:
+                        processname = account_name
+                        pid = tools.getAccountProcessId(processname, shipan=True)
+                        if pid is not None:
+                            tools.setAccountProcess(processname, None, shipan=True)
+                            tools.kill_pid(pid)
+                        self.showAlertStartService('操作成功')
+                    except Exception as e:
+                        print(e, 'process not found')
+                        self.showAlertStartService('process not found')
+                else:
+                    self.showAlertStartService('请选择操作账号')
+            else:
+                self.showAlertStartService('请选择账号')
         else:
             self.showAlertStartService()
 
@@ -379,7 +526,6 @@ class MainWindow(QMainWindow):
         body_window_left.addLayout(lh_manaccount)
         body_window_left.addWidget(tw_account_list)
 
-
         btn_save = QPushButton('保存')
         btn_save.clicked.connect(self.onClickSaveAccountTable)
         btn_save.setFixedWidth(80)
@@ -387,7 +533,6 @@ class MainWindow(QMainWindow):
         body_window_left.addWidget(btn_save)
 
         # body_window_left.addStretch()
-
 
         # float right
         body_window_right = QVBoxLayout()
@@ -402,8 +547,6 @@ class MainWindow(QMainWindow):
         infobox.addWidget(QLabel(stgstr))
 
         body_window_right.addLayout(infobox)
-
-
 
         body_window_right.addStretch()
         body.addLayout(body_window_left)
@@ -455,20 +598,18 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, 'tw_account_list'):
             tw_account_list = self.tw_account_list
-            print('rowcount', tw_account_list.rowCount())
+            # print('rowcount', tw_account_list.rowCount())
 
             if tw_account_list.rowCount() != len(cfg_accounts):
                 tw_account_list.clear()
                 tw_account_list.setRowCount(0)
                 tw_account_list.setColumnCount(0)
-                print('clear...')
-
+                # print('clear...')
                 tw_account_list.setRowCount(len(account_config['accounts']))
                 tw_account_list.setColumnCount(len(account_config['title']))
                 tw_account_list.setHorizontalHeaderLabels(account_config['title'])
         else:
             tw_account_list = TableWidget('ACCOUNT')
-
 
             tw_account_list.setRowCount(len(account_config['accounts']))
             tw_account_list.setColumnCount(len(account_config['title']))
@@ -537,7 +678,7 @@ class MainWindow(QMainWindow):
     def deleteAccount(self):
         selectRows = self.tw_account_list.selectionModel().selectedRows()
         if selectRows:
-            dlg = CustomDialog("警告", "确认删除"+str(len(selectRows))+"条数据？")
+            dlg = CustomDialog("警告", "确认删除" + str(len(selectRows)) + "条数据？")
             button = dlg.exec()
             if button == 1:
                 selectRows.reverse()
@@ -572,9 +713,9 @@ class MainWindow(QMainWindow):
         try:
             tzid = tzs.loc[tzs['网站'] == tz]['ID'].reset_index(drop=True).iloc[0]
             # TZID, 用户名, 启用, 虚拟下单, APPID, APIKEY, OPTK, 策略, 备注
-            df_new_row = pd.DataFrame({"TZID": [tzid], "用户名": [username], "启用": ["0"],"虚拟下单": ["0"], \
+            df_new_row = pd.DataFrame({"TZID": [tzid], "用户名": [username], "启用": ["0"], "虚拟下单": ["0"], \
                                        "APPID": [data.get('appid')], "APIKEY": [data.get('apikey')], \
-                                       "OPTK": [data.get('optk')], "策略":[data.get('stg')], "备注": [""]})
+                                       "OPTK": [data.get('optk')], "策略": [data.get('stg')], "备注": [""]})
 
             accounts = pd.concat([accounts, df_new_row])
             cfg.saveAccountsConfig(accounts)
@@ -586,7 +727,6 @@ class MainWindow(QMainWindow):
             print(e)
 
     def event_table_edit(self, mark, row, column, newval):
-
         ctext = newval
         if mark == 'TZ':
             if len(ctext) > 0:
@@ -651,10 +791,14 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         print("close event")
         cfg.setpid(None)
+        self.windowhandles = []
         self.work.stop_server()
         self.workdatalisten.stop_server()
         self.workorder.stop_server()
         self.worktimer.stop_server()
+        self.worktimer_shipan.stop_server()
+        self.work_webserver.stop_server()
+
 
 if __name__ == "__main__":
     try:

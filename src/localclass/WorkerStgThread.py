@@ -30,9 +30,8 @@ def start_server(startmark = 'START', uid = 0):
     if startmark == 'START':
         print('load uid:', uid)
         selacc = cfg.getAccount(uid)
-        print('selacc :', selacc)
         username = selacc['用户名']
-        print(username)
+        print('selaccount:', username)
         if tools.checkAccountProcessIsRun(username) == True:
             print('process is running...', username)
         else:
@@ -42,10 +41,10 @@ def start_server(startmark = 'START', uid = 0):
                 basedir = os.path.dirname(stgobj['start_script'])
                 sys.path.append(basedir)
                 md = importlib.import_module(stgobj['package'])
-                server_class_name = 'Shipan'
+                server_class_name = 'Paint'
                 param = [username]
                 class_of_module_obj = getattr(md, server_class_name)
-                instance_of_cmo = class_of_module_obj(username)
+                instance_of_cmo = class_of_module_obj(account_name=username)
                 method_of_cmo = getattr(instance_of_cmo, 'start')
                 ret = method_of_cmo()
                 return ret
@@ -55,7 +54,6 @@ def start_server(startmark = 'START', uid = 0):
                 cfg.write_log('stg_error_log', json.dumps([username, stgobj]))
                 cfg.write_log('stg_error_log', traceback.print_exc())
                 cfg.write_log('stg_error_log', 'traceback.format_exc():\n%s' % traceback.format_exc())
-
                 tools.setAccountProcess(username, None)
     else:
         print('st:', startmark)
